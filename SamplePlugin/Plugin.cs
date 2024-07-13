@@ -1,10 +1,11 @@
-﻿using Dalamud.Game.Command;
+using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using SamplePlugin.Windows;
+using JohnFinalfantasy;
 
 namespace SamplePlugin;
 
@@ -21,9 +22,10 @@ public sealed class Plugin : IDalamudPlugin
     public readonly WindowSystem WindowSystem = new("SamplePlugin");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
-
+    private MyHook myHook;
     public Plugin()
     {
+        Services.Initialize(PluginInterface);
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         // you might normally want to embed resources and load them from the manifest stream
@@ -48,10 +50,12 @@ public sealed class Plugin : IDalamudPlugin
 
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+        myHook = new MyHook();
     }
 
     public void Dispose()
     {
+        myHook.Dispose();
         WindowSystem.RemoveAllWindows();
 
         ConfigWindow.Dispose();
