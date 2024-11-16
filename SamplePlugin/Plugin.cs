@@ -13,6 +13,11 @@ using System;
 using Lumina.Data.Files.Excel;
 using Dalamud.Game.ClientState.Objects.Types;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using System.Runtime.Loader;
+using InteropGenerator.Runtime;
+using Dalamud.Game;
+using System.Text;
+using System.Reflection;
 
 namespace SamplePlugin;
 
@@ -25,6 +30,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IGameGui GameGui { get; set; } = null!;
     [PluginService] internal static IDataManager DataManager { get; set; } = null!;
     [PluginService] internal static IGameInteropProvider GameInteropProvider { get; set; } = null!;
+    [PluginService] internal static ISigScanner sigScanner { get; set; } = null!;
 
     private const string CommandName = "/pmycommand";
     private const string TestCommandName = "/testcommand";
@@ -38,8 +44,16 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin()
     {
+        
+        FFXIVClientStructs.Interop.Generated.Addresses.Register();
+        Resolver.GetInstance.Setup(
+            sigScanner.SearchBase,
+            DataManager.GameData.Repositories["ffxiv"].Version
+            );
+        Resolver.GetInstance.Resolve();
+        
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-
+        
         // you might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
 
@@ -110,22 +124,46 @@ public sealed class Plugin : IDalamudPlugin
             {
                 bonusBountiful = 2;
             }
-            var test = GatheredItemComponentCheckboxHelper(gatherWindow, i + 1);
-            var test2 = test->UldManager.SearchNodeById(16)->GetAsAtkTextNode();
-            var chanceOk = Int32.TryParse(test2->NodeText.ToString(), out var chance);
-            var bonusBlessedYield = gatherWindow->IntegrityLeftover->NodeText.ToInteger() * 2.0 / 5;
+            //var test = GatheredItemComponentCheckboxHelper(gatherWindow, i + 1);
+            //var test2 = test->UldManager.SearchNodeById(16)->GetAsAtkTextNode();
+            var itemCheckbox = gatherWindow->GatheredItemComponentCheckBox1;
+            var icon = itemCheckbox->UldManager.SearchNodeById(31)->GetAsAtkComponentNode();
+            var yield = icon->Component->UldManager.SearchNodeById(7)->GetAsAtkTextNode();
+            //var chanceOk = Int32.TryParse(test2->NodeText.ToString(), out var chance);
+            var bonusBlessedYield = 0;//gatherWindow->IntegrityLeftover->NodeText.ToInteger() * 2.0 / 5;
             Log.Debug(i.ToString() + ": " + gatherWindow->ItemIds[i].ToString() + ", " + itemName);
-            Log.Debug("\tGatherer's Boon chance: " + test2->NodeText + "%");
+            Log.Debug("\tYield: " + yield->NodeText);
+            /*
             Log.Debug("\tRequired gathering: " + reqGathering);
             Log.Debug("\tPlayer gathering: " + playerGathering);
             Log.Debug("\tPer 100 GP: ");
             Log.Debug("\t\tBonus yield from bountiful: " + bonusBountiful);
             Log.Debug("\t\tBonus yield from blessed: " + bonusBlessedYield);
             Log.Debug(gatherWindow->IntegrityLeftover->NodeText.ToString());
-            
+            */
         }
     }
 
+public static unsafe void PrintMemoryArea(nint address, int length)
+    {
+        var ptr = (byte*)address;
+        var str = new StringBuilder("\n");
+        for (var i = 0; i < length; i++)
+        {
+            str.Append($"{ptr![i]:X02}");
+
+            if (i == 0)
+                continue;
+
+            if ((i + 1) % 16 == 0)
+                str.Append('\n');
+            else if ((i + 1) % 4 == 0)
+                str.Append(' ');
+        }
+        Log.Information(str.ToString());
+    }
+
+    
     private unsafe AtkComponentCheckBox* GatheredItemComponentCheckboxHelper(AddonGathering* g, int i)
     {
         return i switch
@@ -141,6 +179,7 @@ public sealed class Plugin : IDalamudPlugin
             _ => null,
         };
     }
+    
 
     private void OnCommand(string command, string args)
     {

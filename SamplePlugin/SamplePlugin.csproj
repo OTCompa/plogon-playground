@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="Dalamud.Plugin.Bootstrap.targets"/>
-
+  <!--<Import Project="Dalamud.Plugin.Bootstrap.targets"/>-->
   <PropertyGroup>
     <Version>0.0.0.1</Version>
     <Description>A sample plugin.</Description>
@@ -16,4 +15,49 @@
       <Visible>false</Visible>
     </Content>
   </ItemGroup>
+
+    
+    <PropertyGroup>
+        <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
+        <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.xlcore/dalamud/Hooks/dev/</DalamudLibPath>
+        <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/XIV on Mac/dalamud/Hooks/dev/</DalamudLibPath>
+        <DalamudLibPath Condition="$(DALAMUD_HOME) != ''">$(DALAMUD_HOME)/</DalamudLibPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <Platforms>x64</Platforms>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <AssemblySearchPaths>$(AssemblySearchPaths);$(DalamudLibPath)</AssemblySearchPaths>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DalamudPackager" Version="2.1.13" />
+        <Reference Include="FFXIVClientStructs">
+            <HintPath>C:\Users\Tyler\Desktop\projects\FFXIVClientStructs-Frey\bin\Release\FFXIVClientStructs.dll</HintPath>
+            <Private>true</Private>
+        </Reference>
+        <Reference Include="InteropGenerator.Runtime">
+            <HintPath>C:\Users\Tyler\Desktop\projects\FFXIVClientStructs-Frey\InteropGenerator.Runtime\bin\Release\net8.0\InteropGenerator.Runtime.dll</HintPath>
+            <Private>true</Private>
+        </Reference>
+        <Reference Include="Newtonsoft.Json" Private="false" />
+        <Reference Include="Dalamud" Private="false" />
+        <Reference Include="ImGui.NET" Private="false" />
+        <Reference Include="ImGuiScene" Private="false" />
+        <Reference Include="Lumina" Private="false" />
+        <Reference Include="Lumina.Excel" Private="false" />
+    </ItemGroup>
+
+    <Target Name="Message" BeforeTargets="BeforeBuild">
+        <Message Text="Dalamud.Plugin: root at $(DalamudLibPath)" Importance="high" />
+    </Target>
+    
+    
 </Project>
