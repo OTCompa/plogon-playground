@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Command;
+using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using System.IO;
@@ -21,23 +21,30 @@ public sealed class Plugin : IDalamudPlugin
     public readonly WindowSystem WindowSystem = new("SamplePlugin");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
+    private MarkdownWindow MarkdownWindow { get; init; }
 
     public Plugin()
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-
+        Services.Initialize(PluginInterface);
         // you might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
 
         ConfigWindow = new ConfigWindow(this);
         MainWindow = new MainWindow(this, goatImagePath);
+        MarkdownWindow = new MarkdownWindow(this);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
+        WindowSystem.AddWindow(MarkdownWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "A useful message to display in /xlhelp"
+        });
+
+        CommandManager.AddHandler("/md", new CommandInfo(OnMarkdownCommand) {
+            HelpMessage = "Markdown test"
         });
 
         PluginInterface.UiBuilder.Draw += DrawUI;
@@ -56,8 +63,10 @@ public sealed class Plugin : IDalamudPlugin
 
         ConfigWindow.Dispose();
         MainWindow.Dispose();
+        MarkdownWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
+        CommandManager.RemoveHandler("/md");
     }
 
     private void OnCommand(string command, string args)
@@ -66,8 +75,14 @@ public sealed class Plugin : IDalamudPlugin
         ToggleMainUI();
     }
 
+    private void OnMarkdownCommand(string command, string args)
+    {
+        ToggleMarkdownUI();
+    }
+
     private void DrawUI() => WindowSystem.Draw();
 
     public void ToggleConfigUI() => ConfigWindow.Toggle();
     public void ToggleMainUI() => MainWindow.Toggle();
+    public void ToggleMarkdownUI() => MarkdownWindow.Toggle();
 }
