@@ -49,8 +49,8 @@ public class MarkdownWindow : Window, IDisposable
             }
 
 
-            ImGui.TableNextColumn();
             // Render area
+            ImGui.TableNextColumn();
             render.Draw();
         }
     }
